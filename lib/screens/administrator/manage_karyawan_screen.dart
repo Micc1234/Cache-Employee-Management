@@ -35,46 +35,58 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
 
   Future<void> showAddKaryawanDialog() async {
     String nama = '';
-    String jabatan = '';
     String username = '';
     String password = '';
+    String jabatan = 'Staff'; // Default selection
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text('Add Karyawan'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: 'Nama'),
-                onChanged: (value) {
-                  nama = value;
-                },
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Jabatan'),
-                onChanged: (value) {
-                  jabatan = value;
-                },
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Username'),
-                onChanged: (value) {
-                  username = value;
-                },
-              ),
-              TextField(
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                ),
-                onChanged: (value) {
-                  password = value;
-                },
-                obscureText: true,
-              ),
-            ],
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Nama'),
+                    onChanged: (value) {
+                      nama = value;
+                    },
+                  ),
+                  Wrap(
+                    spacing: 8.0,
+                    children: ['Staff', 'Administrator'].map((role) {
+                      return ChoiceChip(
+                        label: Text(role),
+                        selected: jabatan == role,
+                        onSelected: (selected) {
+                          setState(() {
+                            jabatan = selected ? role : jabatan;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Username'),
+                    onChanged: (value) {
+                      username = value;
+                    },
+                  ),
+                  TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                    ),
+                    onChanged: (value) {
+                      password = value;
+                    },
+                    obscureText: true,
+                  ),
+                ],
+              );
+            },
           ),
           actions: [
             TextButton(
@@ -86,7 +98,6 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
             TextButton(
               onPressed: () async {
                 if (nama.isNotEmpty &&
-                    jabatan.isNotEmpty &&
                     username.isNotEmpty &&
                     password.isNotEmpty) {
                   await dbHelper.insertKaryawan({
@@ -109,48 +120,59 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
 
   Future<void> showEditKaryawanDialog(Map<String, dynamic> karyawan) async {
     String nama = karyawan['nama'];
-    String jabatan = karyawan['jabatan'];
     String username = karyawan['username'];
     String password = karyawan['password'];
+    String jabatan = karyawan['jabatan']; // Current selection
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text('Edit Karyawan'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: 'Nama'),
-                onChanged: (value) {
-                  nama = value;
-                },
-                controller: TextEditingController(text: nama),
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Jabatan'),
-                onChanged: (value) {
-                  jabatan = value;
-                },
-                controller: TextEditingController(text: jabatan),
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Username'),
-                onChanged: (value) {
-                  username = value;
-                },
-                controller: TextEditingController(text: username),
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Password'),
-                onChanged: (value) {
-                  password = value;
-                },
-                obscureText: true,
-                controller: TextEditingController(text: password),
-              ),
-            ],
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Nama'),
+                    onChanged: (value) {
+                      nama = value;
+                    },
+                    controller: TextEditingController(text: nama),
+                  ),
+                  Wrap(
+                    spacing: 8.0,
+                    children: ['Staff', 'Administrator'].map((role) {
+                      return ChoiceChip(
+                        label: Text(role),
+                        selected: jabatan == role,
+                        onSelected: (selected) {
+                          setState(() {
+                            jabatan = selected ? role : jabatan;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Username'),
+                    onChanged: (value) {
+                      username = value;
+                    },
+                    controller: TextEditingController(text: username),
+                  ),
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Password'),
+                    onChanged: (value) {
+                      password = value;
+                    },
+                    obscureText: true,
+                    controller: TextEditingController(text: password),
+                  ),
+                ],
+              );
+            },
           ),
           actions: [
             TextButton(
@@ -162,7 +184,6 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
             TextButton(
               onPressed: () async {
                 if (nama.isNotEmpty &&
-                    jabatan.isNotEmpty &&
                     username.isNotEmpty &&
                     password.isNotEmpty) {
                   await dbHelper.updateKaryawan({
