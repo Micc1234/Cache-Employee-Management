@@ -17,8 +17,8 @@ class RekapAbsensiScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final user = users[index];
           return ListTile(
-            title: Text(user.name),
-            subtitle: Text(user.email),
+            title: Text(user.nama),
+            subtitle: Text(user.jabatan),
           );
         },
       ),

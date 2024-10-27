@@ -32,17 +32,25 @@ class _AdministratorHomeState extends State<AdministratorHome> {
   }
 
   // Method to fetch users
-  Future<List<User>> _fetchUsers() async {
-    final response =
-        await http.get(Uri.parse('https://jsonplaceholder.typicode.com/users'));
+  Future<List<User>> fetchUsers() async {
+  const String jsonBinApiKey = '\$2a\$10\$goSXcOsCFquYNwo0bQDbeuqAisNKLxu4BVMeiG3z8gCDfgFeFTzbi';
+  const String binId = '671da842ad19ca34f8bf1faf'; // Replace with your bin ID
 
-    if (response.statusCode == 200) {
-      final List<dynamic> userData = json.decode(response.body);
-      return userData.map((user) => User.fromJson(user)).toList();
-    } else {
-      throw Exception('Failed to load users');
-    }
+  final response = await http.get(
+    Uri.parse('https://api.jsonbin.io/v3/b/$binId'),
+    headers: {
+      'X-Master-Key': jsonBinApiKey,
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    final List<dynamic> usersJson = data['record']; // Adjust based on your JSON structure
+    return usersJson.map((json) => User.fromJson(json)).toList();
+  } else {
+    throw Exception('Failed to load users');
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +182,7 @@ class _AdministratorHomeState extends State<AdministratorHome> {
                 children: [
                   _buildGridItem(Icons.today_rounded, 'Rekap Absensi', context,
                       () async {
-                    List<User> users = await _fetchUsers(); // Fetch users
+                    List<User> users = await fetchUsers(); // Fetch users
                     Navigator.push(
                       context,
                       MaterialPageRoute(

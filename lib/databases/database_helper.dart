@@ -1,5 +1,8 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 
 class DatabaseHelper1 {
   Database? database;
@@ -46,6 +49,31 @@ class DatabaseHelper1 {
 
   Future<List<Map<String, dynamic>>> fetchKaryawan() async {
     List<Map<String, dynamic>> karyawan = await database!.query("Karyawan");
+    String jsonData = jsonEncode(karyawan);
+
+    const String jsonBinUrl = 'https://api.jsonbin.io/v3/b/671da842ad19ca34f8bf1faf'; // JSONBin endpoint
+    const String jsonBinApiKey = '\$2a\$10\$goSXcOsCFquYNwo0bQDbeuqAisNKLxu4BVMeiG3z8gCDfgFeFTzbi'; // Your JSONBin API key
+
+    try {
+      final response = await http.put(
+        Uri.parse(jsonBinUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': jsonBinApiKey,
+        },
+        body: jsonData,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('Data uploaded successfully: ${response.body}');
+      } else {
+        print('Failed to upload data. Status code: ${response.statusCode}');
+        print('Error: ${response.body}');
+      }
+    } catch (e) {
+      print('An error occurred: $e');
+    }
+
     return karyawan;
   }
 
