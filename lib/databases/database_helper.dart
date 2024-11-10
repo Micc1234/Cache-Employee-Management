@@ -27,16 +27,28 @@ class DatabaseHelper1 {
 
   Future<void> createDatabase(Database database, int version) async {
     await database.execute(
-        'CREATE TABLE Karyawan (id INTEGER PRIMARY KEY, nama TEXT , jabatan TEXT , username TEXT, password TEXT)');
+        'CREATE TABLE Karyawan (id INTEGER PRIMARY KEY, nama TEXT , jabatan TEXT , email TEXT, password TEXT)');
+
+    await database.insert("Karyawan", {
+      'nama': "Admin",
+      'jabatan': "Administrator",
+      'email': "adminadmin@cachecache.com",
+      'password': "admin123"
+    });
+
     await database.execute(
         ' CREATE TABLE Absensi (id INTEGER PRIMARY KEY AUTOINCREMENT, nama TEXT, jenis TEXT, datetime TEXT)');
+    await database.execute(
+      'CREATE TABLE IzinCuti (id INTEGER PRIMARY KEY AUTOINCREMENT, nama TEXT, jenis TEXT, tanggalMulai TEXT, tanggalSelesai TEXT, status TEXT)',
+    );
   }
 
-  Future<Map<String, dynamic>?> fetchByUsername(String username) async {
+  //Tabel Karyawan
+  Future<Map<String, dynamic>?> fetchByEmail(String email) async {
     final List<Map<String, dynamic>> results = await database!.query(
       "Karyawan",
-      where: "username = ?",
-      whereArgs: [username],
+      where: "email = ?",
+      whereArgs: [email],
     );
     if (results.isNotEmpty) {
       return results.first;
@@ -73,12 +85,12 @@ class DatabaseHelper1 {
     return row;
   }
 
+  //Tabel Absensi
   Future<List<Map<String, dynamic>>> fetchAbsensiLengkap() async {
     List<Map<String, dynamic>> absensi = await database!.query("Absensi");
     return absensi;
   }
 
-  //Untuk halaman karyawan
   Future<List<Map<String, dynamic>>> fetchAbsensiKaryawan(String nama) async {
     List<Map<String, dynamic>> absensi = await database!.query(
       "Absensi",
@@ -100,5 +112,26 @@ class DatabaseHelper1 {
       whereArgs: [id],
     );
     return row;
+  }
+
+  // Tabel cuti
+  Future<int> insertIzinCuti(Map<String, dynamic> izinCuti) async {
+    final db = await checkDatabase();
+    return await db.insert("IzinCuti", izinCuti);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchIzinCuti() async {
+    final db = await checkDatabase();
+    return await db.query("IzinCuti");
+  }
+
+  Future<int> updateIzinCutiStatus(int id, String status) async {
+    final db = await checkDatabase();
+    return await db.update(
+      "IzinCuti",
+      {'status': status},
+      where: "id = ?",
+      whereArgs: [id],
+    );
   }
 }

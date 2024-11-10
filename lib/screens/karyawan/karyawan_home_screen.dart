@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cache_employee_management/databases/database_helper.dart';
 import 'package:cache_employee_management/screens/karyawan/history_karyawan_screen.dart';
+import 'package:cache_employee_management/screens/karyawan/pengajuan_cuti_screen.dart';
 import 'package:cache_employee_management/screens/login.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -204,8 +205,16 @@ class _KaryawanHomeState extends State<KaryawanHome> {
                       _checkOut();
                     }
                   }),
-                  _buildGridItem(
-                      Icons.airplane_ticket, 'Pengajuan Cuti/Izin', () {}),
+                  _buildGridItem(Icons.airplane_ticket, 'Pengajuan Cuti/Izin',
+                      () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            PengajuanCutiScreen(name: widget.name),
+                      ),
+                    );
+                  }),
                   _buildGridItem(Icons.feedback, 'Feedback', () {}),
                   _buildGridItem(Icons.history, 'History', () {
                     Navigator.push(

@@ -1,11 +1,8 @@
 import 'package:cache_employee_management/screens/administrator/history_administrator_screen.dart';
+import 'package:cache_employee_management/screens/administrator/konfir_izincuti_screen.dart';
 import 'package:cache_employee_management/screens/login.dart';
-import 'package:cache_employee_management/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'rekap_absensi_screen.dart';
 import 'manage_karyawan_screen.dart';
 
 class AdministratorHome extends StatefulWidget {
@@ -32,17 +29,6 @@ class _AdministratorHomeState extends State<AdministratorHome> {
   }
 
   // Method to fetch users
-  Future<List<User>> _fetchUsers() async {
-    final response =
-        await http.get(Uri.parse('https://jsonplaceholder.typicode.com/users'));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> userData = json.decode(response.body);
-      return userData.map((user) => User.fromJson(user)).toList();
-    } else {
-      throw Exception('Failed to load users');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,16 +158,8 @@ class _AdministratorHomeState extends State<AdministratorHome> {
                 crossAxisSpacing: 10,
                 padding: EdgeInsets.all(15),
                 children: [
-                  _buildGridItem(Icons.today_rounded, 'Rekap Absensi', context,
-                      () async {
-                    List<User> users = await _fetchUsers(); // Fetch users
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              RekapAbsensiScreen(users: users)),
-                    );
-                  }),
+                  _buildGridItem(
+                      Icons.today_rounded, 'Rekap Absensi', context, () {}),
                   _buildGridItem(
                       Icons.manage_accounts, 'Manajemen Karyawan', context, () {
                     Navigator.push(
@@ -190,6 +168,12 @@ class _AdministratorHomeState extends State<AdministratorHome> {
                     );
                   }),
                   _buildGridItem(Icons.mail, 'Inbox Cuti/Izin', context, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => KonfirIzinCutiScreen(),
+                      ),
+                    );
                     //
                   }),
                   _buildGridItem(Icons.feedback, 'Inbox Feedback', context, () {

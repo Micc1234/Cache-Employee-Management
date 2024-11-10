@@ -1,6 +1,8 @@
 import 'package:cache_employee_management/databases/database_helper.dart';
 import 'package:cache_employee_management/screens/administrator/administator_home_screen.dart';
 import 'package:cache_employee_management/screens/karyawan/karyawan_home_screen.dart';
+import 'package:cache_employee_management/screens/karyawan/register.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,23 +16,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   DatabaseHelper1 dbHelper = DatabaseHelper1();
 
-  TextEditingController usernameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
-
-  final List<Map<String, dynamic>> users = [
-    {
-      'name': 'Admin',
-      'username': 'adminadmin',
-      'password': 'admin123',
-      'role': 'Administrator',
-    },
-    {
-      'name': 'Karyawan',
-      'username': 'karyawankaryawan',
-      'password': 'karyawan123',
-      'role': 'Staff',
-    },
-  ];
 
   @override
   void initState() {
@@ -62,53 +49,50 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _login() async {
-    String username = usernameController.text;
+  Future<void> _login() async {
+    String email = emailController.text;
     String password = passwordController.text;
 
-    if (username == 'adminadmin' && password == 'admin123') {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('name', 'Admin');
-      await prefs.setString('role', 'Administrator');
+    try {
+      // Sign in with Firebase Auth
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              AdministratorHome(name: 'Admin', role: 'Administrator'),
-        ),
-      );
-      return;
-    }
+      // Fetch user details from SQLite
+      Map<String, dynamic>? user = await dbHelper.fetchByEmail(email);
+      if (user != null) {
+        String name = user['nama'];
+        String role = user['jabatan'];
 
-    Map<String, dynamic>? user = await dbHelper.fetchByUsername(username);
+        // Save to SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('name', name);
+        await prefs.setString('role', role);
 
-    if (user != null && user['password'] == password) {
-      String name = user['nama'];
-      String role = user['jabatan'];
-
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('name', name);
-      await prefs.setString('role', role);
-
-      if (role == 'Administrator') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AdministratorHome(name: name, role: role),
-          ),
-        );
-      } else if (role == 'Staff') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => KaryawanHome(name: name, role: role),
-          ),
+        // Navigate to the appropriate home screen
+        if (role == 'Administrator') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdministratorHome(name: name, role: role),
+            ),
+          );
+        } else if (role == 'Staff') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => KaryawanHome(name: name, role: role),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User not registered.')),
         );
       }
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid Username or password')),
+        SnackBar(content: Text('Invalid email or password.')),
       );
     }
   }
@@ -128,9 +112,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32),
               TextField(
-                controller: usernameController,
+                controller: emailController,
                 decoration: InputDecoration(
-                  labelText: 'Username',
+                  labelText: 'Email',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -160,6 +144,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+              ),
+              SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RegisterScreen(),
+                    ),
+                  );
+                },
+                child: Text('Register'),
               ),
             ],
           ),

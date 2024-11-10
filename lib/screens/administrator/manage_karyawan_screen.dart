@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cache_employee_management/databases/database_helper.dart';
 
@@ -35,9 +36,9 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
 
   Future<void> showAddKaryawanDialog() async {
     String nama = '';
-    String username = '';
+    String email = '';
     String password = '';
-    String jabatan = 'Staff'; // Default selection
+    String jabatan = 'Staff';
 
     showDialog(
       context: context,
@@ -70,9 +71,9 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
                     }).toList(),
                   ),
                   TextField(
-                    decoration: InputDecoration(labelText: 'Username'),
+                    decoration: InputDecoration(labelText: 'Email'),
                     onChanged: (value) {
-                      username = value;
+                      email = value;
                     },
                   ),
                   TextField(
@@ -98,16 +99,29 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
             TextButton(
               onPressed: () async {
                 if (nama.isNotEmpty &&
-                    username.isNotEmpty &&
+                    email.isNotEmpty &&
                     password.isNotEmpty) {
-                  await dbHelper.insertKaryawan({
-                    'nama': nama,
-                    'jabatan': jabatan,
-                    'username': username,
-                    'password': password
-                  });
-                  fetchKaryawan();
-                  Navigator.of(context).pop();
+                  try {
+                    // tambah ke firebase
+                    UserCredential userCredential = await FirebaseAuth.instance
+                        .createUserWithEmailAndPassword(
+                            email: email, password: password);
+
+                    // tambah ke sqflite
+                    await dbHelper.insertKaryawan({
+                      'nama': nama,
+                      'jabatan': jabatan,
+                      'email': email,
+                      'password': password
+                    });
+
+                    fetchKaryawan();
+                    Navigator.of(context).pop();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to add karyawan: $e')),
+                    );
+                  }
                 }
               },
               child: Text('Add'),
@@ -120,9 +134,21 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
 
   Future<void> showEditKaryawanDialog(Map<String, dynamic> karyawan) async {
     String nama = karyawan['nama'];
-    String username = karyawan['username'];
+    String email = karyawan['email'];
     String password = karyawan['password'];
-    String jabatan = karyawan['jabatan']; // Current selection
+    String jabatan = karyawan['jabatan'];
+
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    String loggedInEmail = currentUser?.email ?? '';
+
+    if (loggedInEmail == email && jabatan == 'Administrator') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Administrator tidak dapat mengedit data dirinya sendiri.')),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
@@ -156,11 +182,11 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
                     }).toList(),
                   ),
                   TextField(
-                    decoration: InputDecoration(labelText: 'Username'),
+                    decoration: InputDecoration(labelText: 'Email'),
                     onChanged: (value) {
-                      username = value;
+                      email = value;
                     },
-                    controller: TextEditingController(text: username),
+                    controller: TextEditingController(text: email),
                   ),
                   TextField(
                     decoration: InputDecoration(labelText: 'Password'),
@@ -184,14 +210,15 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
             TextButton(
               onPressed: () async {
                 if (nama.isNotEmpty &&
-                    username.isNotEmpty &&
+                    email.isNotEmpty &&
                     password.isNotEmpty) {
                   await dbHelper.updateKaryawan({
                     'nama': nama,
                     'jabatan': jabatan,
-                    'username': username,
+                    'email': email,
                     'password': password
                   }, karyawan['id']);
+
                   fetchKaryawan();
                   Navigator.of(context).pop();
                 }
@@ -205,6 +232,11 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
   }
 
   Future<void> showDeleteConfirmationDialog(int id) async {
+    Map<String, dynamic> karyawanToDelete =
+        karyawanList.firstWhere((karyawan) => karyawan['id'] == id);
+    String emailToDelete = karyawanToDelete['email'];
+    String passwordToDelete = karyawanToDelete['password'];
+
     showDialog(
       context: context,
       builder: (context) {
@@ -220,9 +252,28 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
             ),
             TextButton(
               onPressed: () async {
-                await dbHelper.deleteKaryawan(id);
-                fetchKaryawan();
-                Navigator.of(context).pop();
+                try {
+                  UserCredential userCredential =
+                      await FirebaseAuth.instance.signInWithEmailAndPassword(
+                    email: emailToDelete,
+                    password: passwordToDelete,
+                  );
+
+                  // Hapus karyawan dari Firebase Auth
+                  if (userCredential.user != null) {
+                    await userCredential.user?.delete();
+
+                    // Hapus data karyawan dari SQLite
+                    await dbHelper.deleteKaryawan(id);
+
+                    fetchKaryawan();
+                    Navigator.of(context).pop();
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menghapus karyawan: $e')),
+                  );
+                }
               },
               child: Text('Delete'),
             ),
@@ -242,7 +293,7 @@ class _ManageKaryawanState extends State<ManageKaryawan> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Username: ${karyawan['username']}'),
+              Text('Email: ${karyawan['email']}'),
               Text('Password: ${karyawan['password']}'),
             ],
           ),
