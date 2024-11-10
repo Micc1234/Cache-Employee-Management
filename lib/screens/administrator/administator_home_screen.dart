@@ -28,8 +28,6 @@ class _AdministratorHomeState extends State<AdministratorHome> {
     );
   }
 
-  // Method to fetch users
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
