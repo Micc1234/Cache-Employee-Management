@@ -1,3 +1,5 @@
+import 'dart:io'; // For File handling
+import 'package:image_picker/image_picker.dart'; // For image selection
 import 'package:cache_employee_management/screens/administrator/history_administrator_screen.dart';
 import 'package:cache_employee_management/screens/administrator/konfir_izincuti_screen.dart';
 import 'package:cache_employee_management/screens/login.dart';
@@ -16,6 +18,9 @@ class AdministratorHome extends StatefulWidget {
 }
 
 class _AdministratorHomeState extends State<AdministratorHome> {
+  File? _profileImage; // Variable to store the selected image
+  final ImagePicker _picker = ImagePicker(); // Image picker instance
+
   // Function to perform the logout
   Future<void> _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -26,6 +31,16 @@ class _AdministratorHomeState extends State<AdministratorHome> {
       context,
       MaterialPageRoute(builder: (context) => LoginScreen()),
     );
+  }
+
+  // Function to pick an image from gallery or camera
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+    }
   }
 
   @override
@@ -104,7 +119,9 @@ class _AdministratorHomeState extends State<AdministratorHome> {
             Padding(
               padding: EdgeInsets.all(16),
               child: GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  _showImageSourceDialog();
+                },
                 child: Card(
                   elevation: 20,
                   shape: RoundedRectangleBorder(
@@ -119,6 +136,12 @@ class _AdministratorHomeState extends State<AdministratorHome> {
                       children: [
                         CircleAvatar(
                           radius: 35,
+                          backgroundImage: _profileImage != null
+                              ? FileImage(_profileImage!)
+                              : null,
+                          child: _profileImage == null
+                              ? Icon(Icons.person, size: 35)
+                              : null,
                         ),
                         SizedBox(width: 16),
                         Column(
@@ -172,7 +195,6 @@ class _AdministratorHomeState extends State<AdministratorHome> {
                         builder: (context) => KonfirIzinCutiScreen(),
                       ),
                     );
-                    //
                   }),
                   _buildGridItem(Icons.feedback, 'Inbox Feedback', context, () {
                     //
@@ -190,6 +212,33 @@ class _AdministratorHomeState extends State<AdministratorHome> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showImageSourceDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select Image Source'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+              child: Text('Camera'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+              child: Text('Gallery'),
+            ),
+          ],
+        );
+      },
     );
   }
 
